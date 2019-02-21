@@ -87,6 +87,7 @@ templates := []template.Template{
 renderers := make([]func(generror.TemplParam), len(templates))
 for i := range templates {
     tmpl := tempates[i]
+    dstFileName := dstFileNames[i]
     renderers[i] = func(param generror.TmplParam) error {
 
         param.ImportPackages = append(param.ImportPackages, "fmt")
