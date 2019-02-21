@@ -121,9 +121,9 @@ template def
 type ErrorFormatter interface {
     {{- range .DetailErrorCodes }}
     {{ .Code }}Error(
-        {{- range .Params -}}
+        {{- range .Params }}
         {{ .Name }} {{ .Type }},
-        {{- end -}}
+        {{- end }}
     ) string
     {{- end }}
 }
@@ -138,9 +138,9 @@ func FormatError(formatter ErrorFormatter, err ErrorDetail) string {
     {{- range .DetailErrorCodes }}
     case "{{ .Code }}":
         return formatter.{{ .Code }}Error(
-            {{- range $i, $v := .Params -}}
+            {{- range $i, $v := .Params }}
             err.Args[{{ $i }}].({{ $v.Type }}),
-            {{- end -}}
+            {{- end }}
         )
     {{- end }}
     }
@@ -151,8 +151,15 @@ generated
 
 ```go
 type ErrorFormatter interface {
-    NameIsInvalidLengthError(lessThan int, moreThan int) string
-    FooError(arg1 string, arg2 time.Time, arg3 int) string
+    NameIsInvalidLengthError(
+        lessThan int,
+        moreThan int,
+    ) string
+    FooError(
+        arg1 string,
+        arg2 time.Time,
+        arg3 int,
+    ) string
     BarError() string
 }
 
@@ -164,9 +171,16 @@ type ErrorDetail struct {
 func FormatError(formatter ErrorFormatter, err ErrorDetail) string {
     switch err.Code {
     case "NameIsInvalidLength":
-        return formatter.NameIsInvalidLengthError(err.Args[0].(int), err.Args[1].(int))
+        return formatter.NameIsInvalidLengthError(
+            err.Args[0].(int),
+            err.Args[1].(int),
+        )
     case "Foo":
-        return formatter.FooError(err.Args[0].(string), err.Args[1].(time.Time), err.Args[2].(int))
+        return formatter.FooError(
+            err.Args[0].(string),
+            err.Args[1].(time.Time),
+            err.Args[2].(int),
+        )
     case "Bar":
         return formatter.BarError()
     }
