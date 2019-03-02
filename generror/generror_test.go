@@ -143,6 +143,14 @@ func ExampleRun() {
 	// 	return strings.Join(append([]string{e.code.String()}, e.args...), ",")
 	// }
 	//
+	// func (c ErrorDetail) Code() ErrorDetailCode {
+	// 	return c.code
+	// }
+	//
+	// func (c ErrorDetail) Args() []string {
+	// 	return c.args
+	// }
+	//
 	// type ErrorDetailCode string
 	//
 	// func (c ErrorDetailCode) String() string {
