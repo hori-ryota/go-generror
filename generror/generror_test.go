@@ -19,11 +19,18 @@ func ExampleRun() {
 		[]func(param generror.TmplParam) error{
 			func(param generror.TmplParam) error {
 
-				param.ImportPackages = append(param.ImportPackages, "fmt")
-				param.ImportPackages = append(param.ImportPackages, "strings")
-				param.ImportPackages = append(param.ImportPackages, "go.uber.org/zap")
-				param.ImportPackages = append(param.ImportPackages, "go.uber.org/zap/zapcore")
-				param.ImportPackages = append(param.ImportPackages, "github.com/hori-ryota/zaperr")
+				importPackages := map[string]string{
+					"fmt":     "fmt",
+					"strings": "strings",
+					"zap":     "go.uber.org/zap",
+					"zapcore": "go.uber.org/zap/zapcore",
+					"zaperr":  "github.com/hori-ryota/zaperr",
+				}
+				for k, v := range param.ImportPackages {
+					importPackages[k] = v
+				}
+
+				param.ImportPackages = importPackages
 
 				buf := new(bytes.Buffer)
 				err := generror.GodefTmpl.Execute(buf, param)

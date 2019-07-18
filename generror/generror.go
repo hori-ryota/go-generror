@@ -2,14 +2,13 @@ package generror
 
 import (
 	"bufio"
-	"bytes"
-	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
+
+	"github.com/hori-ryota/go-genutil/strtype"
 )
 
 const (
@@ -66,12 +65,14 @@ func Run(targetDir string, errorCodes []string, renderers []func(TmplParam) erro
 		detailErrorCodes[i] = info
 	}
 
-	importPackages := make([]string, 0, 5)
+	importPackages := make(map[string]string, 5)
 
 	for _, c := range detailErrorCodes {
 		for _, p := range c.Params {
-			_, pkgs := JudgeToStringMethod(p)
-			importPackages = append(importPackages, pkgs...)
+			pkgs := strtype.ImportsForConverter(p.Type)
+			for _, pkg := range pkgs {
+				importPackages[path.Base(pkg)] = pkg
+			}
 		}
 	}
 
@@ -94,7 +95,7 @@ type TmplParam struct {
 	PackageName      string
 	ErrorCodes       []string
 	DetailErrorCodes []DetailErrorCodeInfo
-	ImportPackages   []string
+	ImportPackages   map[string]string
 }
 
 type DetailErrorCodeInfo struct {
@@ -108,27 +109,7 @@ type ParamInfo struct {
 }
 
 func ToStringMethod(param ParamInfo) string {
-	m, _ := JudgeToStringMethod(param)
-	return m
-}
-
-func JudgeToStringMethod(param ParamInfo) (toStringMethod string, needsPkgs []string) {
-	switch param.Type {
-	case "string":
-		return param.Name, nil
-	case "bool":
-		return fmt.Sprintf("strconv.FormatBool(%s)", param.Name), []string{"strconv"}
-	case "uint64":
-		return fmt.Sprintf("strconv.FormatUint(%s, 10)", param.Name), []string{"strconv"}
-	case "uint", "uint8", "uint16", "uint32":
-		return fmt.Sprintf("strconv.FormatUint(uint64(%s), 10)", param.Name), []string{"strconv"}
-	case "int64":
-		return fmt.Sprintf("strconv.FormatInt(%s, 10)", param.Name), []string{"strconv"}
-	case "int", "int8", "int16", "int32":
-		return fmt.Sprintf("strconv.FormatInt(int64(%s), 10)", param.Name), []string{"strconv"}
-	default:
-		return fmt.Sprintf("fmt.Sprint(%s)", param.Name), []string{"fmt"}
-	}
+	return strtype.ToConverter(param.Type, param.Name)
 }
 
 func extractErrorDetailComments(fileName string) ([]string, error) {
@@ -162,48 +143,4 @@ func extractPkgName(fileName string) (string, error) {
 		}
 	}
 	return "", nil
-}
-
-func FmtImports(pkgs []string) string {
-	if len(pkgs) == 0 {
-		return ""
-	}
-
-	groups := make([][]string, 2)
-
-	for _, pkg := range pkgs {
-		if len(strings.Split(pkg, "/")) < 3 && !strings.Contains(pkg, ".") {
-			groups[0] = append(groups[0], pkg)
-			continue
-		}
-		groups[1] = append(groups[1], pkg)
-	}
-
-	b := new(bytes.Buffer)
-	for _, group := range groups {
-		group := group
-		sort.Slice(group, func(i, j int) bool {
-			return group[i] < group[j]
-		})
-		for _, pkg := range group {
-			_, err := b.WriteString(strconv.Quote(pkg))
-			if err != nil {
-				panic(err)
-			}
-			_, err = b.WriteRune('\n')
-			if err != nil {
-				panic(err)
-			}
-		}
-		_, err := b.WriteRune('\n')
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return fmt.Sprintf(`import (
-%s
-		)`,
-		b.String(),
-	)
 }

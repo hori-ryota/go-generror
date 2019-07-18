@@ -1,10 +1,14 @@
 package generror
 
-import "text/template"
+import (
+	"text/template"
+
+	"github.com/hori-ryota/go-genutil/genutil"
+)
 
 var GodefTmpl = template.Must(template.New("errTmpl").Funcs(map[string]interface{}{
 	"ToStringMethod": ToStringMethod,
-	"FmtImports":     FmtImports,
+	"FmtImports":     genutil.GoFmtImports,
 }).Parse(`
 // Code generated ; DO NOT EDIT
 
